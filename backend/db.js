@@ -1,22 +1,43 @@
 const mongoose = require("mongoose");
 const { MONGODB_URL } = require("./config");
 
+// Don't throw error if MONGODB_URL is missing, just warn
+// This allows the server to start and fail gracefully
 if (!MONGODB_URL) {
-    throw new Error("MONGODB_URL is not defined in environment variables");
+    console.warn("Warning: MONGODB_URL is not defined in environment variables");
+    console.warn("Server will start but database operations will fail");
+} else {
+    // Connect to MongoDB with better error handling
+    mongoose.connect(MONGODB_URL, {
+        serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+        socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+    }).then(() => {
+        console.log("Connected to MongoDB");
+    }).catch((error) => {
+        console.error("Failed to connect to MongoDB:", error.message);
+        // Don't exit process immediately, allow server to start
+        // The connection will be retried automatically by mongoose
+    });
+
+    mongoose.connection.on("connected", () => {
+        console.log("MongoDB connection established");
+    });
+
+    mongoose.connection.on("error", (error) => {
+        console.error("MongoDB connection error:", error.message);
+    });
+
+    mongoose.connection.on("disconnected", () => {
+        console.warn("MongoDB disconnected. Attempting to reconnect...");
+    });
+
+    // Handle process termination
+    process.on('SIGINT', async () => {
+        await mongoose.connection.close();
+        console.log('MongoDB connection closed through app termination');
+        process.exit(0);
+    });
 }
-
-mongoose.connect(MONGODB_URL).catch((error) => {
-    console.error("Failed to connect to MongoDB:", error);
-    process.exit(1);
-});
-
-mongoose.connection.on("connected", () => {
-    console.log("Connected to MongoDB");
-});
-
-mongoose.connection.on("error", (error) => {
-    console.error("MongoDB connection error:", error);
-});
 
 // Create a Schema for Users
 const userSchema = new mongoose.Schema({

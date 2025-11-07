@@ -2,13 +2,19 @@ services:
   - type: web
     name: paytm-backend
     env: node
-    buildCommand: npm install
-    startCommand: npm start
+    region: oregon
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3000
+        fromService:
+          type: web
+          name: paytm-backend
+          property: port
       - key: JWT_SECRET
         sync: false
       - key: MONGODB_URL
