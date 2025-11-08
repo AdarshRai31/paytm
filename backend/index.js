@@ -29,6 +29,32 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Root endpoint - API information
+app.get("/", (req, res) => {
+    res.json({
+        message: "Paytm Backend API",
+        version: "1.0.0",
+        endpoints: {
+            health: "/health",
+            api: {
+                base: "/api/v1",
+                user: {
+                    signup: "POST /api/v1/user/signup",
+                    signin: "POST /api/v1/user/signin",
+                    me: "GET /api/v1/user/me",
+                    update: "PUT /api/v1/user",
+                    bulk: "GET /api/v1/user/bulk"
+                },
+                account: {
+                    balance: "GET /api/v1/account/balance",
+                    transfer: "POST /api/v1/account/transfer",
+                    transactions: "GET /api/v1/account/transactions"
+                }
+            }
+        }
+    });
+});
+
 // Health check endpoint (should work even if DB is down)
 app.get("/health", (req, res) => {
     const mongoose = require("mongoose");
